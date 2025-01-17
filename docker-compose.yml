@@ -1,0 +1,98 @@
+version: '3.8'
+services:
+  # -------------------
+  # 1) MySQL Database
+  # -------------------
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: my_db
+      MYSQL_USER: my_user
+      MYSQL_PASSWORD: my_pass
+    ports:
+      - "3306:3306"
+    networks:
+      - spring-net
+
+  # -------------------
+  # 2) WebClient-Service
+  # -------------------
+  webclient-service:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: webclient-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mysql-db
+    networks:
+      - spring-net
+    environment:
+      # Exemple : variables pour la DB si besoin
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/my_db
+      SPRING_DATASOURCE_USERNAME: my_user
+      SPRING_DATASOURCE_PASSWORD: my_pass
+
+  # -------------------
+  # 3) Rest-Service
+  # -------------------
+  rest-service:
+    build:
+      context: ./rest
+      dockerfile: Dockerfile
+    container_name: rest-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql-db
+    networks:
+      - spring-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/my_db
+      SPRING_DATASOURCE_USERNAME: my_user
+      SPRING_DATASOURCE_PASSWORD: my_pass
+
+  # -------------------
+  # 4) Feign-Service
+  # -------------------
+  feign-service:
+    build:
+      context: ./feign
+      dockerfile: Dockerfile
+    container_name: feign-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql-db
+    networks:
+      - spring-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/my_db
+      SPRING_DATASOURCE_USERNAME: my_user
+      SPRING_DATASOURCE_PASSWORD: my_pass
+
+  # -------------------
+  # 5) Voiture-Service
+  # -------------------
+  voiture-service:
+    build:
+      context: ./voiture-service
+      dockerfile: Dockerfile
+    container_name: voiture-service
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mysql-db
+    networks:
+      - spring-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/my_db
+      SPRING_DATASOURCE_USERNAME: my_user
+      SPRING_DATASOURCE_PASSWORD: my_pass
+
+networks:
+  spring-net:
+    driver: bridge
