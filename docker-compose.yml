@@ -1,7 +1,40 @@
 version: '3.8'
+
 services:
   # -------------------
-  # 1) MySQL Database
+  # Jenkins Server
+  # -------------------
+  jenkins:
+    image: jenkins/jenkins:lts
+#    container_name: jenkins
+    user: root
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - maven_repo:/var/jenkins_home/.m2/repository
+    networks:
+      - spring-net
+
+  # -------------------
+  # SonarQube Server
+  # -------------------
+  
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9000:9000"
+    networks:
+      - spring-net
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+
+  # -------------------
+  # MySQL Database
   # -------------------
   mysql-db:
     image: mysql:8.0
@@ -17,7 +50,7 @@ services:
       - spring-net
 
   # -------------------
-  # 2) WebClient-Service
+  # WebClient-Service
   # -------------------
   webclient-service:
     build:
@@ -31,13 +64,12 @@ services:
     networks:
       - spring-net
     environment:
-      # Exemple : variables pour la DB si besoin
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/my_db
       SPRING_DATASOURCE_USERNAME: my_user
       SPRING_DATASOURCE_PASSWORD: my_pass
 
   # -------------------
-  # 3) Rest-Service
+  # Rest-Service
   # -------------------
   rest-service:
     build:
@@ -56,7 +88,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: my_pass
 
   # -------------------
-  # 4) Feign-Service
+  # Feign-Service
   # -------------------
   feign-service:
     build:
@@ -75,7 +107,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: my_pass
 
   # -------------------
-  # 5) Voiture-Service
+  # Voiture-Service
   # -------------------
   voiture-service:
     build:
@@ -83,7 +115,7 @@ services:
       dockerfile: Dockerfile
     container_name: voiture-service
     ports:
-      - "9000:9000"
+      - "9001:9001"
     depends_on:
       - mysql-db
     networks:
@@ -92,6 +124,13 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/my_db
       SPRING_DATASOURCE_USERNAME: my_user
       SPRING_DATASOURCE_PASSWORD: my_pass
+
+volumes:
+  jenkins_home:
+  maven_repo:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
 
 networks:
   spring-net:
